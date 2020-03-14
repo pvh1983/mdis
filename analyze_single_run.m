@@ -8,7 +8,9 @@ This code:
 Last visit: 03/14/2020.
 Status: In use. 
 File history: 
-    - 03/14/2020: Clean up and print more notifications to the log file
+03/14/2020: 
+    - Clean up and print more notifications to the log file
+    - Rename to analyze_single_run.m
     - 
 
 % How to use:
@@ -37,7 +39,7 @@ Nmodels = 9;
 % Run TrueGP2 given new pmp and obs locations
 system('ln -s /home/ftsai/codes/run_mf_true_model.m .'); % link file
 run_mf_true_model
-fprintf("\nRunning the TRUE model GP2 with the new pumping location.\n");
+fprintf("\nFinished running TRUE model GP2 with the new pmploc.\n");
 
 ofile = 'output.tom'; % To write outputs and logs
 fid = fopen(ofile,'w');
@@ -46,7 +48,7 @@ fprintf(fid, "Curr dir: %s \n", pwd); fprintf(fid,"\n"); fprintf(fid,"\n");
 for kk = 1:n_new_obs
     fout=strcat('out',num2str(kk),'.mat');
     fprintf(fid, "fout: %s \n", fout);
-    fprintf("Reading file: %s \n", fout);
+    fprintf("\nReading file: %s \n", fout);
     load(fout);    
     save tmp.mat kk loc_opt_obs loc_opt_pmp err1024 Prior H Hopt_ fid ofile maxminEED_final runopt Dopt mea_err_added corr_flag Nmodels
     clear all; load tmp.mat;    
@@ -59,7 +61,7 @@ for kk = 1:n_new_obs
     
     fprintf(fid, "Observation locations: \n");
     fprintf(fid, '%d, ', obsid); fprintf(fid,"\n");
-    fprintf(fid, "EED (maxmin or maxmax): %6.3f\n", maxminEED_final);   
+    fprintf(fid, "EED (maxmin or maxmax): %6.3f (nat)\n", maxminEED_final);   
 
     %%
     Dtmp(1:Nobs,1:9) = H(obsid,1,:); % Hopt
@@ -74,9 +76,9 @@ for kk = 1:n_new_obs
     end
 
     if Dopt == 1
-        fprintf(fid, "\nWARNING: Used REAL observation data (Hobs from GB2) for future obs.");        
+        fprintf(fid, "\nWARNING: Used REAL observation data (Hobs from GB2) for future obs.\n");        
     else
-        fprintf(fid, "\nWARNING: Used BMA data for future obs.");
+        fprintf(fid, "\nWARNING: Used BMA data for future obs.\n");
     end 
 
     # Get Hopt at a design location
@@ -158,7 +160,7 @@ for kk = 1:n_new_obs
     fprintf(fid, "BFactor is: \n");
     fprintf(fid, "%6.2f, ", BFac); fprintf(fid,"\n")
 
-    fprintf(fid, "Min BFac = %4.1f \n", minK)
+    fprintf(fid, "Min BFac = %4.3f \n", minK)
 
     %dlmwrite('all_min_BFac.tom',BFac','-append','delimiter','\t');
     dlmwrite('pmp.csv',PMP','delimiter',',');
