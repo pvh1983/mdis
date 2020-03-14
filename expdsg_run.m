@@ -1,16 +1,17 @@
 % EXPERIMENTAL DESING USING 1 ADDITIONAL PUMPING WELLs
 % Version 5.0 LAST UPDATED: 07142016
 % Version 6.0 LAST UPDATED: 10/03/2019 (DEL SIGMA_i)
+% - High pumping rate (-2000)
 
 clc; clear all; close all; tic
 delete('*.dat');
 
 % Must read before submiting a job: 
-nobsloc       = 5; % # of potential observation location
+nobsloc       = 1; % # of potential observation location
 mea_err_added = 1; % 1: yes; 0: NO
 corr_flag     = 1; % corr = 1; no_corr = 0;
 %% Par in func_EED.m ? %%%
-%% Comment pmpdsg as head.mat already available in each run %%%
+%% Comment pmpdsg if head.mat already available in each run %%%
 %% getfitness.sh? %% OK
 %% Prior OK? 
 
@@ -21,7 +22,8 @@ Prior = [1.77E-01	1.90E-01	1.88E-01	1.71E-01	2.05E-01	6.94E-02	1.71E-13	4.26E-12
 
 % Run pmpdsg to get head.mat and use this file for obsdsg from 1 obs to 10 obs. 
 pmpdsg % Call script pmpdsg.m to get head.mat
-
+system('rm -r GP* IK* IZ*'); # Delete folders to save space
+count = 1;
 while nobsloc <= 5
 	outfile1 = strcat('out',num2str(nobsloc),'.hai');
 	%outfile2 = strcat('out',num2str(nobsloc),'_excel.hai');
@@ -35,13 +37,13 @@ while nobsloc <= 5
     %
     fid = fopen('gaobs4.inp','w');
     fprintf(fid,' parmin= %2d*1.0d0, \n',nobsloc);
-    fprintf(fid,' parmax= %2d*1024.0d0, \n',nobsloc);
-    fprintf(fid,' nposibl= %2d*1024, \n',nobsloc);
+    fprintf(fid,' parmax= %2d*512.0d0, \n',nobsloc);
+    fprintf(fid,' nposibl= %2d*512, \n',nobsloc);
     fprintf(fid,' nichflg= %2d*1, \n',nobsloc);
     fprintf(fid,' $end \n');    
     fclose(fid); clear fid 
     system('cat gaobs1.inp gaobs2.inp gaobs3.inp gaobs4.inp > gaobs.inp');
-    delete('gaobs2.inp');delete('gaobs4.inp');
+    delete('gaobs2.inp'); delete('gaobs4.inp');
     
 	% Run experimental design using xxx pmp wells and nobsloc
     system('./gaobs > outdspobs.dat');
@@ -68,13 +70,14 @@ while nobsloc <= 5
 	loc_opt_pmp = load('param.txt');
 	func_well(pmp(loc_opt_pmp,2:4)); % generate the new pmp package
 	load err1024 % Measurement errors
-	Hobs = NaN(1024,1);
+	Hobs = NaN(512,1);
 	copyfile('mf54.wel','TrueGP2'); 
 	cd('TrueGP2'); % Change to each model's directory (GP1, GP2 ...)
 	% Run MODFLOW (max 320 par realizations)
 	Hobs = Ofunc; % Gen LPF pack. and run MODFLOW
 	cd ..
-	save('Hobs1024points.mat','Hobs');
+	%save('Hobs1024points.mat','Hobs');  % in ASCII format
+	save -mat-binary Hobs1024points.mat Hobs
 
 
 	%% [3] CALCULATE BAYES FACTOR
@@ -122,7 +125,7 @@ while nobsloc <= 5
 	if mea_err_added == 1 	
 		D = Dtmp*Prior; % Realization k of future data prediction by BMA + mea errors
 	else
-		D = Dtmp*Prior; % Realization k of future data prediction by BMA + mea errors
+		D = Dtmp*Prior; % Realization k of future data prediction by BMA 
 	end
 	
 	
@@ -149,7 +152,7 @@ while nobsloc <= 5
 
 	end
 	clear D Dbar SIGi
-	Lall(k,1:Nmodels) = L;
+	Lall(count,1:Nmodels) = L;
 	[NS IX] = sort(L,'descend'); % Clear Nsample
 	%IX_ALL(k,:) = IX;
 	for m = 2:Nmodels % models
@@ -157,19 +160,27 @@ while nobsloc <= 5
 		BFac(m-1,1) = L(IX(1))/L(IX(m));
 	end
 
+
+    %% CALCULATED POSTERIOR MODEL PROBABILITY
+    for m = 1:Nmodels
+        PMP(m,1) = L(m,1)/sum(L);
+    end
+	PMP_all(count,1:Nmodels) = PMP;
+	
 	%clear L IX  
 	minK = min(BFac);
 	maxminEED_final = -minfit;
 	dlmwrite(outfile1,'MaxMinEED | MinBF | All BFs | opt_pmp_loc | opt_obs_loc','-append','delimiter','');
-	dlmwrite(outfile1,[maxminEED_final minK BFac' loc_opt_pmp loc_opt_obs],'-append','delimiter','\t');
+	dlmwrite(outfile1,[maxminEED_final minK PMP' BFac' loc_opt_pmp loc_opt_obs],'-append','delimiter','\t');
 	clear  SIGi_ SIG Dbar_ Ci_
 	
 	dlmwrite(outfile1,'--------------------------------------------------','-append','delimiter','');
 	rtime(nobsloc,1) = toc/3600;
 %	clear H
 	nobsloc = nobsloc + 1
+	clear COV9
+	count = count + 1;
 	save -mat-binary data.mat
 	movefile('data.mat',outfile3);
-	clear COV9
-	system('rm -r run*');
+	
 end % while

@@ -8,7 +8,7 @@ tic
 %global H
 %% [1] RUN MODFLOW GIVEN A NEW PUMPING LOCATION
 md = ['GP1';'GP2';'GP3';'IK1';'IK2';'IK3';'IZ1';'IZ2';'IZ3']; 
-Nobs = 1024;
+Nobs = 512;
 Nmodels = 9;
 nmc = 320; % 32 for testing only, final is 320
 all_pmp_loc = load('pmploc256.txt'); % All 1024 potential pumping locations (1024x3)
@@ -24,8 +24,7 @@ func_well(pmploc); % generate the new pmp package
 %load err1024 % Measurement errors, dif. at 1024 locs, but same in 320 mc.
 
 H = NaN(Nobs,nmc,Nmodels);
-#for k = 1:Nmodels % 9 models
-for k = 1:6 %  Skip IZ model because it is not important
+for k = 1:Nmodels % 9 models
 	fname = md(k,:);           
 	copyfile('mf54.wel',fname); 
 	cd(fname); % Change to each model's directory (GP1, GP2 ...)
