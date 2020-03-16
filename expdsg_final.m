@@ -12,6 +12,8 @@ if fitness ==-Inf || isnan(fitness)==1
 	fitness = -9999;
 end
 
+% solve for max-max
+%fitness=-fitness;
 
 
 dlmwrite('fitness.dat',fitness,'delimiter','\t');

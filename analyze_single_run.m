@@ -3,7 +3,7 @@ clc; clear ; close all; tic
 %{
 This code: 
     1. Analyze the outputs from optimal experiment design (i.e., *.mat files).
-    2. xxx
+    2. This is the ouputs from a single run_xxx (one new pmploc, multiple obsloc)
 
 Last visit: 03/14/2020.
 Status: In use. 
@@ -14,9 +14,10 @@ File history:
     - 
 
 % How to use:
-% Copy this file to run_xxx folder
-% octave Cal_BFac_at_best_obs_loc_using_real_data_093016.m 
+% Copy file analyze_sing_run.m to run_xxx folder
+% octave analyze_sing_run.m 
 % 
+% NOTE: use copyfile_.py too run analyze_sing_run.m for all run folders
 
 %}
 
@@ -34,7 +35,11 @@ Dopt   = 1; % Choosing future observation data: [1] real obs; [0] BMA
 mea_err_added = 0; % 1: yes; 0: NO
 corr_flag     = 1; % corr = 1; no_corr = 0; - Not using this option here?
 Nmodels = 9;
+#run_folder_id = 3
 
+% Jump to run_xxx folder
+#cur_run_folder = strcat(pwd, '/run_', num2str(run_folder_id))
+#cd(cur_run_folder)
 
 % Run TrueGP2 given new pmp and obs locations
 system('ln -s /home/ftsai/codes/run_mf_true_model.m .'); % link file
@@ -171,20 +176,5 @@ end % obsid
 
 fclose(fid);
 fprintf("\nThe results were saved at %s \n", ofile)
-
-% Hopt_all = Hopt_*Prior;
-% Hobs_err = Hobs + err1024;
-% 
-% out = [Hobs err1024 Hobs+err1024 Hopt_ ];
-% %%
-% id1 = find(all_minBF(:,1) > 500);
-% out2 = [all_minBF(id1,1) all_PMP(id1,:)];
-% 
-% min_EED = min(all_minBF(:,1));
-% 
-% id2 = find(all_minBF(:,1) < 500);
-% max_EED = max(all_minBF(id2,1));
-%%
-
-%save all_var_minBF.mat all_minBF all_var Hobs_all Hopt_all
+#cd .. % Move back
 toc
