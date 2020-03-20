@@ -1,6 +1,7 @@
 % EXPERIMENTAL DESING USING 1 ADDITIONAL PUMPING WELLs
 % Version 5.0 LAST UPDATED: 07142016
 % Version 6.0 LAST UPDATED: 10/03/2019 (DEL SIGMA_i)
+% Version 6.1: 03/16/2020 some minor edits
 % - High pumping rate (-2000)
   
 clc; clear all; close all; tic
@@ -47,7 +48,8 @@ while nobsloc <= 5
     
 	% Run experimental design using xxx pmp wells and nobsloc
     system('./gaobs > outdspobs.dat');
-	
+	cmd_cpfile = strcat('cp -f results.dat', {' '}, 'results', num2str(nobsloc), '.dat')
+	system(cmd_cpfile{:,:})
 	
 	% Find and print optimal observation locations
 	%% read results.dat

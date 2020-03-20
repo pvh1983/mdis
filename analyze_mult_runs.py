@@ -6,20 +6,23 @@ import numpy as np
 
 '''
 Notes: 
-
+- Analyze results from multiple runs in an experimental design
+- 
 
 '''
 
-nruns = 202  # 202
+nruns = 3  # Number of run folders
 nmodels = 9
 pmp = np.empty((nruns, nmodels))
 cur_dir = os.getcwd()
 count = 0
 id_err_run = []
-for i in range(6, nruns, 1):
+for i in range(0, nruns, 1):  # Go to each folder
     wpath = cur_dir + '/run_' + str(i+1)
     print(f'Working {wpath} \n')
     os.chdir(wpath)
+
+    # Prepare some files
     #subprocess.call(cmd, shell=True)
     os.system('rm -f analyze_single_run.m ')
     os.system('rm -f run_mf_true_model.m')
@@ -28,9 +31,12 @@ for i in range(6, nruns, 1):
         'ln -s /home/ftsai/codes/analyze_single_run.m')
     os.system('ln -s /home/ftsai/codes/run_mf_true_model.m .')
     os.system('cp -f ../TrueGP2/mf54.lpf TrueGP2/')
+
+    # Run Matlab code to analyze the result for one design
     os.system('octave analyze_single_run.m')
 
-    # Load ouput file and save the result
+    # Load ouput files and save the result
+    # The csv file is created from analyze_single_run.m
     if os.path.isfile('pmp.csv'):
         data = np.loadtxt('pmp.csv', delimiter=',')
         pmp[i, :] = data

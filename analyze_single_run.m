@@ -88,12 +88,14 @@ for kk = 1:n_new_obs
 
     # Get Hopt at a design location
     Hopt = H(obsid,1,:);
-    
+    fprintf('%6.2f\n', size(Hopt))
     fprintf(fid, "\nHobs is: \n");
     fprintf(fid, '%6.2f, ', Hobs(obsid,1)); fprintf(fid,"\n");
     
     fprintf(fid, "Hopt are: \n");
-    fprintf(fid, '%6.2f, ', Hopt); fprintf(fid,"\n");
+    fprintf(fid, '%6.2f, ', Hopt); 
+#    dlmwrite(fid,Hopt)
+    fprintf(fid,"\n");
 
     % CALCULATE COVARIANCE MATRIX
     % Within-model covariance as follows:
@@ -107,6 +109,8 @@ for kk = 1:n_new_obs
     for m = 1:Nmodels
         %Hdiff = Hopt(:,m) - Hobs(obsid,1)-err1024(obsid,1);
         Hdiff = Hopt(:,m) - D;
+        fprintf('Hdiff: %6.2f\n', Hdiff)
+
         SH(:,:,m) = (Hdiff*Hdiff')*Prior(m,1); % FULL COV. MATRIX
         %SH(:,:,m) = diag(Hdiff*Hdiff');
     end
