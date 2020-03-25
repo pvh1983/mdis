@@ -3,24 +3,7 @@ import subprocess
 import os
 import timeit
 import numpy as np
-
-
-'''
-def DomainDecompose(comm, rank, size, input):
-    if rank == 0:
-        for i in range(1, size, 1):
-            comm.send(input[i-1], dest=i)
-            print(f'Rank {rank} sent {input[i-1]}\n')
-    else:
-        data = comm.recv(source=0)
-        odir = 'run_' + str(int(data[0]))
-        os.chdir(odir)
-        cmd = 'pwd'
-        subprocess.call(cmd, shell=True)
-        print(f'Rank {rank} received {data}')
-
-    comm.Barrier()
-'''
+from datetime import datetime
 
 
 def DomainDecompose(comm, rank, size, input):
@@ -33,31 +16,31 @@ def DomainDecompose(comm, rank, size, input):
         offset = 0
 
         for i in range(0, size):
-            col = ave if i < size-extra else ave+1
-            counts[i] = col
+            ntasks_per_proc = ave if i < size-extra else ave+1
+            counts[i] = ntasks_per_proc
 
             if i == 0:
-                col0 = col
-                offset += col
+                ntasks_per_proc0 = ntasks_per_proc
+                offset += ntasks_per_proc
                 displs[i] = 0
             else:
                 comm.send(offset, dest=i)
-                comm.send(col, dest=i)
-                offset += col
+                comm.send(ntasks_per_proc, dest=i)
+                offset += ntasks_per_proc
                 displs[i] = displs[i-1] + counts[i-1]
 
         offset = 0
-        col = col0
+        ntasks_per_proc = ntasks_per_proc0
 
     comm.Barrier()
 
     if rank != 0:  # workers
         offset = comm.recv(source=0)
-        col = comm.recv(source=0)
+        ntasks_per_proc = comm.recv(source=0)
 
     comm.Barrier()
-    xml_files = input[offset:offset+col]
-    return xml_files, col
+    xml_files = input[offset:offset+ntasks_per_proc]
+    return xml_files, ntasks_per_proc
 
 
 if __name__ == '__main__':
@@ -74,30 +57,21 @@ if __name__ == '__main__':
     #print(f'size is {size}')
 
     # Load id of pump locations
-#    if rank == 0:
     data = np.loadtxt('parentpmp.txt')
 
-    '''    
-        npruns = 2
-        for i in range(npruns):
-            istart = i*size
-            istop = (i+1)*size
-            data_run_1 = data[istart:istop]
-            print(f'i={i},istart={istart}, istop={istop}, size={size}\n')
-            print(data_run_1)
-    '''
-
-    runid, col = DomainDecompose(comm, rank, size, data)
+    runid, ntasks_per_proc = DomainDecompose(comm, rank, size, data)
     # print(f'runid={runid}\n')
-    # print(f'col={col}\n')
+    # print(f'ntasks_per_proc={ntasks_per_proc}\n')
 
     if rank == 0:
         time_start = timeit.default_timer()
         # Preparing run folders
-        os.system('.getfitness.sh')
+        if not os.path.exists('run_1'):  # Make a new directory if not exist
+            os.system('./getfitness.sh')
+            print('Generated new run folders\n')
     comm.Barrier()
 
-    for j in range(0, col):  # total_number_of_tasks/size (e.g., 4 cores)
+    for j in range(0, ntasks_per_proc):  # ntasks_per_proc: ntasks for each proc
         tic = timeit.default_timer()
         cwd = os.getcwd()
         # print(f'cdir={cwd}\n')
@@ -105,9 +79,13 @@ if __name__ == '__main__':
         #print(f'current run directory is {run_dir}\n')
         os.chdir(run_dir)
         #cmd = 'python test.py'
-        cmd = 'pwd'
+        cmd = 'octave expdsg_run.m > dsp.out'
         subprocess.call(cmd, shell=True)
         os.chdir(cwd)
         toc = timeit.default_timer()
-        print(f'CPU {rank} run folder {j+1}: {run_dir} cost {toc-tic} seconds\n')
+        print(
+            f'{str(datetime.now())}, CPU {rank}, {run_dir}, {round((toc-tic)/60,3)} mins.\n')
     comm.Barrier()
+
+    # Clean up: Delete all run folders
+    # os.system('rm -rf run_*')

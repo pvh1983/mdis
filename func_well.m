@@ -1,8 +1,8 @@
-function func_well(wloc)
+function func_well(wloc, pmprate)
 % Version 2.0
 % wloc Npmp x 3 (3 columns is L R C)
 % Print new pmp file - yearly (15)
-pmprate = -1000;
+# - Add pmprate to func_well.m
 Total_Npmp = length(wloc(:,1)) + 3; % 2 is the number of existing pumping wells
 f3 = 'mf54.wel';
 fid1 = fopen(f3,'w');

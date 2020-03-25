@@ -1,6 +1,7 @@
 function EED_KPN = func_EED(obsid)
 % Version 5.0 07142016: Fix m. error covariance matrix in I2
 % Version 6.0 LAST UPDATED: 10/03/2019 (DEL SIGMA_i)
+% Version 6.1: Printer out Dnew to file
 
 %clc; clear all; 
 tic
@@ -51,7 +52,7 @@ Hopt = Hopt_(obsid,:); clear Hopt_ % Nobs x Nmodels
 	SIG_err(logical(eye(size(SIG_err)))) = err1024(obsid).^2; % Dig terms only
 	
     for m = 1:9
-        #COV9(:,:,m) = (SIG + SIG_err + SIGi9(:,:,m))/10; % FINAL after discusion 071416
+        %COV9(:,:,m) = (SIG + SIG_err + SIGi9(:,:,m))/10; % FINAL after discusion 071416
         COV9(:,:,m) = (SIG + SIG_err); % FINAL after discusion 071416
         det_COV9(m,1) = det(COV9(:,:,m));
         [L,pp] = chol(COV9(:,:,m),'lower'); % Cholesky decompotition: r = Lz where L satisfies LL' = C.
@@ -77,9 +78,11 @@ if runopt.KPN == 1
     [z w] = nwspgr('KPN', Nobs, acc.KPN);
     NKPpoints = length(z);
     for m = 1:9
+       ofile_dnew = strcat('Dnew_nobs_',num2str(Nobs),'_model_', num2str(m),'.csv' );				
        for k = 1:NKPpoints % k is i in the MS.
             if corr_flag == 1 % with correlation
-                Dnew =   [Hopt(:,m)+LL(:,:,m)*z(k,:)'];  % NO CORRELATION 2x1 if 2 obs (samples of future data)            
+                Dnew =   [Hopt(:,m)+LL(:,:,m)*z(k,:)'];  % NO CORRELATION 2x1 if 2 obs (samples of future data) 
+                dlmwrite(ofile_dnew,Dnew','-append','delimiter',',','precision','%.3f');           
                 qi(k,1) = ftest(Nobs,Dnew,Hopt,COV9,Prior,corr_flag); % 10x1 Call function, using PDF pi  
                 clear Dnew
             else % No correlation
@@ -109,7 +112,7 @@ if runopt.KPN == 1
     clear I2 z  COVM w m
     func_run_time = toc;
     out = [obsid EED_KPN func_run_time];
-    dlmwrite('func_runtime.txt',out,'-append')
+    %dlmwrite('func_runtime.txt',out,'-append')
 end
 clear L dA det_COV9 pp
 

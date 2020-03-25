@@ -2,15 +2,22 @@
 % Version 5.0 LAST UPDATED: 07142016
 % Version 6.0 LAST UPDATED: 10/03/2019 (DEL SIGMA_i)
 % Version 6.1: 03/16/2020 some minor edits
-% - High pumping rate (-2000)
+% - High pumping rate (-1000)
+% 03/20/2020: Add copy files and cleanup
+% ATTENTION: All *.dat will be deleted!!!
   
 clc; clear all; close all; tic
 delete('*.dat');
+delete('Dnew_nobs_*.csv');
+delete('func_runtime.txt')
 
 % Must read before submiting a job: 
-nobsloc       = 1; % # of potential observation location
+nobsloc       = 1; % % of potential observation location
+max_nobsloc = 4;
 mea_err_added = 1; % 1: yes; 0: NO
 corr_flag     = 1; % corr = 1; no_corr = 0;
+pmprate = -1000;
+
 %% Par in func_EED.m ? %%%
 %% Comment pmpdsg if head.mat already available in each run %%%
 %% getfitness.sh? %% OK
@@ -18,19 +25,36 @@ corr_flag     = 1; % corr = 1; no_corr = 0;
 
 % initial parameter values
 obs = load('pmploc1024.txt'); pmp = load('pmploc256.txt');
-Nmodels = 9; rtime =  NaN(10,1);
+Nmodels = 9; rtime =  NaN(max_nobsloc,1);
 Prior = [1.77E-01	1.90E-01	1.88E-01	1.71E-01	2.05E-01	6.94E-02	1.71E-13	4.26E-12	6.21E-10]';
 
 % Run pmpdsg to get head.mat and use this file for obsdsg from 1 obs to 10 obs. 
-pmpdsg % Call script pmpdsg.m to get head.mat
-system('rm -r GP* IK* IZ*'); # Delete folders to save space
+chk = exist('head.mat'); % = 2 exist file.
+if chk ~= 2
+	pmpdsg % Call script pmpdsg.m to get head.mat
+	fprintf("\nRun MC for 9 models, 320 realizations to get head.m\n");
+else
+	fprintf("\nhead.mat existed. No new model runs!!!\n");
+end
+%system('rm -r GP* IK* IZ*'); % Delete folders to save space
+
+% Open file to save dnew
+
+
 count = 1;
-while nobsloc <= 5
+while nobsloc <= max_nobsloc	
+	%for m = 1:Nmodels % Under model i
+		%ofile_dnew = strcat('Dnew_nobs_',num2str(Nobs),'_model_', num2str(m),'.csv' );
+		%date = datestr(now, 'dd/mm/yy-HH:MM');
+		%dlmwrite(ofile_dnew,date,'-append',delimiter='');
+	%end 
 	outfile1 = strcat('out',num2str(nobsloc),'.hai');
 	%outfile2 = strcat('out',num2str(nobsloc),'_excel.hai');
 	outfile3 = strcat('out',num2str(nobsloc),'.mat');
     
 	delete('*.dat');
+	dlmwrite(outfile1,'WARNING: Deleted all *.dat files.','-append','delimiter','');
+
     % GENERATE FILE gaobs.inp
     fid = fopen('gaobs2.inp','w');
     fprintf(fid,'nparam= %2d, \n',nobsloc);
@@ -47,10 +71,21 @@ while nobsloc <= 5
     delete('gaobs2.inp'); delete('gaobs4.inp');
     
 	% Run experimental design using xxx pmp wells and nobsloc
-    system('./gaobs > outdspobs.dat');
-	cmd_cpfile = strcat('cp -f results.dat', {' '}, 'results', num2str(nobsloc), '.dat')
-	system(cmd_cpfile{:,:})
+	ofile_mat = strcat('out',num2str(nobsloc),'.mat'); % make sure done running
+	chk2 = exist(ofile_mat); % = 2 exist file.
+	if chk2 ~= 2
+		system('./gaobs > outdspobs.dat');
+		fprintf("\nRun gaobs at nobs = %d\n", count);
+	else
+		fprintf("\nWARNING: Did not run gaobs at nobs = %d\n", count);
+	end
+    
+	%dlmwrite(outfile1,'DONE running gaobs.','-append','delimiter','');
+
+	cmd_cpfile = strcat('bk_results_', num2str(nobsloc), '.tom');
+	%system(cmd_cpfile{:,:})
 	
+	%{
 	% Find and print optimal observation locations
 	%% read results.dat
 	file_result = strcat('results.dat'); 
@@ -66,22 +101,41 @@ while nobsloc <= 5
 
 	dlmwrite(outfile1,'The optimal observation locations:','-append','delimiter','');
 	dlmwrite(outfile1,[loc_opt_obs],'-append','delimiter','\t');
-
+	%}
 	
 	%% [2] RUN MODFLOW FOR TRUE MODEL GIVEN NEW PUMPING LOCATIONS
 	loc_opt_pmp = load('param.txt');
-	func_well(pmp(loc_opt_pmp,2:4)); % generate the new pmp package
+	loc_opt_pmp(1) = []; % Delete the first row which is for ID
+	func_well(pmp(loc_opt_pmp,2:4), pmprate); % generate the new pmp package
 	load err1024 % Measurement errors
 	Hobs = NaN(512,1);
 	copyfile('mf54.wel','TrueGP2'); 
-	cd('TrueGP2'); % Change to each model's directory (GP1, GP2 ...)
+	cd('TrueGP2'); % Change to each model's directory (GP1, GP2 ...)	
 	% Run MODFLOW (max 320 par realizations)
 	Hobs = Ofunc; % Gen LPF pack. and run MODFLOW
 	cd ..
+	dlmwrite(outfile1,'DONE running TrueGP2 with new pmploc.','-append','delimiter','');
 	%save('Hobs1024points.mat','Hobs');  % in ASCII format
 	save -mat-binary Hobs1024points.mat Hobs
+	dlmwrite(outfile1,'The pumping locations:','-append','delimiter','');
+	dlmwrite(outfile1,[loc_opt_pmp],'-append','delimiter','\t');
+	%dlmwrite(outfile1,'Saved Hobs at Hobs1024points.mat.','-append','delimiter','');
+
+	count = count + 1;
+	chk = exist('results.dat'); % = 2 exist file.
+	if chk == 2
+		movefile('results.dat',cmd_cpfile);
+	end
+	
+	rtime(nobsloc,1) = toc/3600;	
+	save -mat-binary data.mat
+	movefile('data.mat',outfile3);	
+	dlmwrite(outfile1,'Total run time for expdsg_run.m is:','-append','delimiter','');
+	dlmwrite(outfile1,[rtime],'-append','delimiter','\t');
+	nobsloc = nobsloc + 1
 
 
+	%{
 	%% [3] CALCULATE BAYES FACTOR
 	load head.mat
 	obsid = loc_opt_obs; 
@@ -136,7 +190,7 @@ while nobsloc <= 5
 	%clear id_obs
 	
 	
-	
+    %% CALCULATE LIKELIHOOD:	
 	clear Dtmp
 	for m = 1:Nmodels % models
 		if corr_flag==0
@@ -161,14 +215,18 @@ while nobsloc <= 5
 		%BFac(k,m-1) = L(IX(1))/L(IX(m));
 		BFac(m-1,1) = L(IX(1))/L(IX(m));
 	end
+    minK = min(BFac);
+    BFac(9,1) = 999;
 
 
     %% CALCULATED POSTERIOR MODEL PROBABILITY
     for m = 1:Nmodels
-        PMP(m,1) = L(m,1)/sum(L);
+        %PMP(m,1) = L(m,1)/sum(L);
+		PMP(m,1) = L(m,1)*Prior(m)/(L'*Prior);
     end
 	PMP_all(count,1:Nmodels) = PMP;
-	
+    results = [BFac PMP*100];
+
 	%clear L IX  
 	minK = min(BFac);
 	maxminEED_final = -minfit;
@@ -177,12 +235,17 @@ while nobsloc <= 5
 	clear  SIGi_ SIG Dbar_ Ci_
 	
 	dlmwrite(outfile1,'--------------------------------------------------','-append','delimiter','');
-	rtime(nobsloc,1) = toc/3600;
-%	clear H
-	nobsloc = nobsloc + 1
+	
+	%clear H
+	
 	clear COV9
-	count = count + 1;
-	save -mat-binary data.mat
-	movefile('data.mat',outfile3);
+	%}
 	
 end % while
+
+% Copy results and cleanup
+system('rm -f save_outputs.py');
+system('ln -s /home/ftsai/codes/save_outputs.py .');
+system('python save_outputs.py');
+
+% Cleanup run_x folder: See save_outputs.py

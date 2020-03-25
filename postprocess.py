@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 '''
 1. Process all_pmp.csv [all pmp given different pumping designs]
+to run: link code to folder /work/ftxx/output/
 
 '''
 
@@ -24,8 +25,8 @@ fid = open(ifile_log, 'w')
 # Define some functions
 
 
-def plot_pmp(wdir, dsg_sce, list_model):
-    ifile = wdir + dsg_sce + '/all_pmp.csv'
+def plot_pmp(wdir, dsg_sce, list_model, nobs):
+    ifile = wdir + dsg_sce + '/output/all_pmp' + str(nobs) + '.csv'
     df = pd.read_csv(ifile)
     print(f'\nReading {ifile}\n')
     df.columns = list_model
@@ -47,7 +48,8 @@ def plot_pmp(wdir, dsg_sce, list_model):
     fid.write('\nList of the best models and frequency:\n')
     fid.write(f'{list_of_best_model}')
     ax.set_ylabel('Frequency')
-    ofile = odir + '/' + 'hist_best_model_' + dsg_sce + '.png'
+    ofile = odir + '/' + 'hist_best_model_' + \
+        dsg_sce + '_nobs_' + str(nobs) + '.png'
     fig.savefig(ofile, dpi=150, transparent=False, bbox_inches='tight')
     print(f'Saved {ofile}')
     plt.close(fig)
@@ -58,9 +60,11 @@ def plot_pmp(wdir, dsg_sce, list_model):
 
 # Generate figures ============================================================
 dsg_sce = ['h1S4_pmp2000_max_min', 'h1S4_pmp2000_max_max']
-
+nobs = 4  # Max number of new obs wells
 for s in dsg_sce:
-    plot_pmp(wdir, s, list_model)
+    for i in range(nobs):
+        nobs_in_this_dsg = i+1
+        plot_pmp(wdir, s, list_model, nobs_in_this_dsg)
 
 fid.close()
 # References

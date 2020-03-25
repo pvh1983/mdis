@@ -23,8 +23,11 @@ count=1
 pcount=0
 while read line
   do
+	if [ ! -d run_$count ]
+	then	  
 	  mkdir run_$count
 	  cd run_$count
+	  
 	  mkdir GP1
 	  cd GP1
 		ln -s $workdir/GP1/* .
@@ -76,16 +79,20 @@ while read line
 		ln -s $workdir/TrueGP2/* .
 		rm -f mf54._os mf54.wel *.out fort.*
 	  cd ..
-	  ln -s $workdir/*.* .  
+	ln -s $workdir/*.* .  
 #	  ln -s $workdir/gapmp
-	  ln -s $workdir/gaobs
-	  
-      echo $line > param.txt
-	remotehost=${HOSTLIST[$pcount]}
-	ssh -n $remotehost "cd $workdir/run_$count; export PATH=$PATH:$workdir/run_$count; octave -qH --no-window-system $MFILE > /dev/null" &
+	ln -s $workdir/gaobs
+	fi
+
+	cd $workdir/run_$count	  
+    echo $line > param.txt
+	rm -f out*.mat func_runtime.txt result*.dat
+	#remotehost=${HOSTLIST[$pcount]}
+	#ssh -n $remotehost "cd $workdir/run_$count; export PATH=$PATH:$workdir/run_$count; octave -qH --no-window-system $MFILE > /dev/null" &
     if [ $(( $count%$nproc )) -eq 0 ]
         then
 	  		pcount=-1
+			#count=0  # commentout if limit number of run folders to nproc
 #	  		echo "Processing job $count..."
 			  wait
         fi

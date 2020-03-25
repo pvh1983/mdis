@@ -2,8 +2,9 @@ clc; clear ; close all; tic
 
 %{
 This code: 
-    1. Analyze the outputs from optimal experiment design (i.e., *.mat files).
-    2. This is the ouputs from a single run_xxx (one new pmploc, multiple obsloc)
+    1. Analyze the outputs from an optimal experiment design (i.e., *.mat files).
+       i.e., read file out1.mat, out2.mat ... 
+    2. These ouput files are from a single run_xxx (one new pmploc, multiple obsloc)
 
 Last visit: 03/14/2020.
 Status: In use. 
@@ -11,13 +12,15 @@ File history:
 03/14/2020: 
     - Clean up and print more notifications to the log file
     - Rename to analyze_single_run.m
-    - 
+03/25/2020
+    - Minor edits to read new ouput file after the mpirun ver.
+    -     
 
 % How to use:
 % Copy file analyze_sing_run.m to run_xxx folder
 % octave analyze_sing_run.m 
 % 
-% NOTE: use copyfile_.py too run analyze_sing_run.m for all run folders
+% NOTES: use copyfile_.py too run analyze_sing_run.m for all run folders
 
 %}
 
@@ -25,16 +28,19 @@ File history:
 % ---- out*.mat (in run_xxx folder)
 
 % Output file: *.tom
-delete('*.tom'); % Clean the old *.tom file
+% pmp1.csv, pmp2.csv ... and *.tom
+#delete('*.tom'); % Clean the old *.tom file
+
 
 % Define other run options
-n_new_obs = 5; # from 1 to 5. 
+n_new_obs = 4; # from 1 to 5. 
 % MAKE SURE YOU CHANGE THESE PARAMETERS:
 runopt = 4; % Consider m. err or not: [1] with m. err; [0] no m.err
 Dopt   = 1; % Choosing future observation data: [1] real obs; [0] BMA
 mea_err_added = 0; % 1: yes; 0: NO
 corr_flag     = 1; % corr = 1; no_corr = 0; - Not using this option here?
 Nmodels = 9;
+opt_run_true_model = 0; % 1:run; other: no_run
 #run_folder_id = 3
 
 % Jump to run_xxx folder
@@ -42,27 +48,46 @@ Nmodels = 9;
 #cd(cur_run_folder)
 
 % Run TrueGP2 given new pmp and obs locations
-system('ln -s /home/ftsai/codes/run_mf_true_model.m .'); % link file
-run_mf_true_model
-fprintf("\nFinished running TRUE model GP2 with the new pmploc.\n");
+if opt_run_true_model == 1
+    system('ln -s /home/ftsai/codes/run_mf_true_model.m .'); % link file
+    run_mf_true_model
+    fprintf("\nFinished running TRUE model GP2 with the new pmploc.\n");
+else
+    fprintf("\nNo TrueGPS2 was run. Used the existing result.\n");
+end
+
+% Load some files
+H = load('head.mat')
 
 ofile = 'output.tom'; % To write outputs and logs
 fid = fopen(ofile,'w');
 fprintf(fid, "Curr dir: %s \n", pwd); fprintf(fid,"\n"); fprintf(fid,"\n");
 
-for kk = 1:n_new_obs
+for kk = 1:n_new_obs # max =5 to avoid numerical errors
     fout=strcat('out',num2str(kk),'.mat');
     fprintf(fid, "fout: %s \n", fout);
     fprintf("\nReading file: %s \n", fout);
-    load(fout);    
-    save tmp.mat kk loc_opt_obs loc_opt_pmp err1024 Prior H Hopt_ fid ofile maxminEED_final runopt Dopt mea_err_added corr_flag Nmodels
-    clear all; load tmp.mat;    
-    clear Hobs
-    load Hobs1024points.mat
+    load(fout);
+    
+    %save tmp.mat kk loc_opt_obs loc_opt_pmp err1024 Prior H Hopt_ 
+    %fid ofile maxminEED_final runopt Dopt mea_err_added corr_flag Nmodels
+    %clear all; load tmp.mat;    
+    %clear Hobs
+    %load Hobs1024points.mat
 
 
-    obsid = loc_opt_obs;
-    Nobs = length(obsid);
+	% Find and print optimal observation locations ----------------------------
+	%% read results.dat
+    ifile_results = strcat('bk_results',num2str(kk),'.dat')
+	file_result = strcat(ifile_results); 
+	r = load(file_result); r_all=r;
+	[row col] = size(r);
+	r(1:row-5,:) =[]; % Delete all, just take the last five values
+	
+	Nobs = length(r(1,:))-1; 
+	minfit = max(r(:,Nobs+1));
+	loc_opt_obs_tmp = find(r(:,Nobs+1) == minfit);
+	loc_opt_obs = r(loc_opt_obs_tmp(end),1:Nobs); clear loc_opt_obs_tmp
     
     fprintf(fid, "Observation locations: \n");
     fprintf(fid, '%d, ', obsid); fprintf(fid,"\n");
@@ -172,7 +197,8 @@ for kk = 1:n_new_obs
     fprintf(fid, "Min BFac = %4.3f \n", minK)
 
     %dlmwrite('all_min_BFac.tom',BFac','-append','delimiter','\t');
-    dlmwrite('pmp.csv',PMP','delimiter',',');
+    ofile_csv = strcat('pmp', num2str(kk),'.csv')
+    dlmwrite(ofile_csv, PMP','precision','%.6f','delimiter',',');
     %all_minBF(kk,:) = BFac;
     %all_PMP(kk,:) = PMP;
     fprintf(fid, "\n");    fprintf(fid, "\n");
