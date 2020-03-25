@@ -29,11 +29,11 @@ File history:
 
 % Output file: *.tom
 % pmp1.csv, pmp2.csv ... and *.tom
-#delete('*.tom'); % Clean the old *.tom file
+%delete('*.tom'); % Clean the old *.tom file
 
 
 % Define other run options
-n_new_obs = 4; # from 1 to 5. 
+n_new_obs = 4; % from 1 to 5. 
 % MAKE SURE YOU CHANGE THESE PARAMETERS:
 runopt = 4; % Consider m. err or not: [1] with m. err; [0] no m.err
 Dopt   = 1; % Choosing future observation data: [1] real obs; [0] BMA
@@ -41,11 +41,11 @@ mea_err_added = 0; % 1: yes; 0: NO
 corr_flag     = 1; % corr = 1; no_corr = 0; - Not using this option here?
 Nmodels = 9;
 opt_run_true_model = 0; % 1:run; other: no_run
-#run_folder_id = 3
+%run_folder_id = 3
 
 % Jump to run_xxx folder
-#cur_run_folder = strcat(pwd, '/run_', num2str(run_folder_id))
-#cd(cur_run_folder)
+%cur_run_folder = strcat(pwd, '/run_', num2str(run_folder_id))
+%cd(cur_run_folder)
 
 % Run TrueGP2 given new pmp and obs locations
 if opt_run_true_model == 1
@@ -53,17 +53,17 @@ if opt_run_true_model == 1
     run_mf_true_model
     fprintf("\nFinished running TRUE model GP2 with the new pmploc.\n");
 else
-    fprintf("\nNo TrueGPS2 was run. Used the existing result.\n");
+    fprintf("\nNo TrueGP2 was run. Used the existing result.\n");
 end
 
 % Load some files
-H = load('head.mat')
+load head.mat
 
 ofile = 'output.tom'; % To write outputs and logs
 fid = fopen(ofile,'w');
 fprintf(fid, "Curr dir: %s \n", pwd); fprintf(fid,"\n"); fprintf(fid,"\n");
 
-for kk = 1:n_new_obs # max =5 to avoid numerical errors
+for kk = 1:n_new_obs % max =5 to avoid numerical errors
     fout=strcat('out',num2str(kk),'.mat');
     fprintf(fid, "fout: %s \n", fout);
     fprintf("\nReading file: %s \n", fout);
@@ -78,7 +78,7 @@ for kk = 1:n_new_obs # max =5 to avoid numerical errors
 
 	% Find and print optimal observation locations ----------------------------
 	%% read results.dat
-    ifile_results = strcat('bk_results',num2str(kk),'.dat')
+    ifile_results = strcat('bk_results_',num2str(kk),'.tom')
 	file_result = strcat(ifile_results); 
 	r = load(file_result); r_all=r;
 	[row col] = size(r);
@@ -86,8 +86,9 @@ for kk = 1:n_new_obs # max =5 to avoid numerical errors
 	
 	Nobs = length(r(1,:))-1; 
 	minfit = max(r(:,Nobs+1));
-	loc_opt_obs_tmp = find(r(:,Nobs+1) == minfit);
-	loc_opt_obs = r(loc_opt_obs_tmp(end),1:Nobs); clear loc_opt_obs_tmp
+    maxminEED_final = -minfit;
+	obsid_tmp = find(r(:,Nobs+1) == minfit);
+	obsid = r(obsid_tmp(end),1:Nobs); clear obsid_tmp
     
     fprintf(fid, "Observation locations: \n");
     fprintf(fid, '%d, ', obsid); fprintf(fid,"\n");
@@ -96,7 +97,7 @@ for kk = 1:n_new_obs # max =5 to avoid numerical errors
     %%
     Dtmp(1:Nobs,1:9) = H(obsid,1,:); % Hopt
     
-    # Choosing of future observation data (D) and errors
+    % Choosing of future observation data (D) and errors
     if mea_err_added == 1
         D = Hobs(obsid,1)+err1024(obsid,1);     % Use real observation data + err
         fprintf(fid, "\nWARNING: Measurement errors were ADDED to future obs.");
@@ -111,15 +112,19 @@ for kk = 1:n_new_obs # max =5 to avoid numerical errors
         fprintf(fid, "\nWARNING: Used BMA data for future obs.\n");
     end 
 
-    # Get Hopt at a design location
-    Hopt = H(obsid,1,:);
-    fprintf('%6.2f\n', size(Hopt))
+    % Get Hopt at a design location
+    Hopt(1:length(obsid),1:Nmodels) = H(obsid,1,:);
+    fprintf('%6.2f\n', size(Hopt));
     fprintf(fid, "\nHobs is: \n");
     fprintf(fid, '%6.2f, ', Hobs(obsid,1)); fprintf(fid,"\n");
     
-    fprintf(fid, "Hopt are: \n");
-    fprintf(fid, '%6.2f, ', Hopt); 
-#    dlmwrite(fid,Hopt)
+    fprintf(fid, "Hopt are:\n");
+    fprintf(fid, "GP1, GP2, GP3, IK1, IK2, IK3, IZ1, IZ2, IZ3\n");
+    #for i=1:size(Hopt)(1)
+    #    fprintf(fid, '%6.2f,', Hopt(i,:)'); 
+    #end
+    #writematrix(Hopt,fid,'-append')
+    dlmwrite(fid,Hopt,'-append', 'precision','%4.3f')
     fprintf(fid,"\n");
 
     % CALCULATE COVARIANCE MATRIX
@@ -130,12 +135,12 @@ for kk = 1:n_new_obs # max =5 to avoid numerical errors
     end 
     clear Htmp 
     WMCV = sum(SIGi9,3);
-
+    
+    %fprintf('Hdiff:\n');
     for m = 1:Nmodels
         %Hdiff = Hopt(:,m) - Hobs(obsid,1)-err1024(obsid,1);
         Hdiff = Hopt(:,m) - D;
-        fprintf('Hdiff: %6.2f\n', Hdiff)
-
+        #fprintf('%6.2f\n', Hdiff');
         SH(:,:,m) = (Hdiff*Hdiff')*Prior(m,1); % FULL COV. MATRIX
         %SH(:,:,m) = diag(Hdiff*Hdiff');
     end
@@ -158,7 +163,7 @@ for kk = 1:n_new_obs # max =5 to avoid numerical errors
     fprintf(fid, "WMCV is: \n");
     fprintf(fid, '%6.3e, ', WMCV); fprintf(fid,"\n");
 
-    #clear Dtmp
+    %clear Dtmp
     %% CALCULATE LIKELIHOOD:
     for m = 1:Nmodels % models       	
         %L(m,1) = det(SIG_err+SIGi9(:,:,m))^(-1/2)*exp(-0.5*(D-Hopt(:,m))'*(SIG_err+SIGi9(:,:,m))^(-1)*(D-Hopt(:,m))); %            	
@@ -167,12 +172,12 @@ for kk = 1:n_new_obs # max =5 to avoid numerical errors
 
     %% CALCULATED POSTERIOR MODEL PROBABILITY
     for m = 1:m
-        #PMP(m,1) = L(m,1)/sum(L);
+        %PMP(m,1) = L(m,1)/sum(L);
         PMP(m,1) = L(m,1)*Prior(m)/(L'*Prior);
     end
 
     %%
-    clear D Dbar SIGi
+    clear D Dbar SIGi SIGi9 COV9 SIG SIG_err
     [NS IX] = sort(L,'descend'); % Clear Nsample
     for m = 2:Nmodels % models
         %fprintf(L(IX(m));
@@ -206,5 +211,5 @@ end % obsid
 
 fclose(fid);
 fprintf("\nThe results were saved at %s \n", ofile)
-#cd .. % Move back
+%cd .. % Move back
 toc

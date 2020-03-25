@@ -14,7 +14,7 @@ delete('func_runtime.txt')
 % Must read before submiting a job: 
 nobsloc       = 1; % % of potential observation location
 max_nobsloc = 4;
-mea_err_added = 1; % 1: yes; 0: NO
+%mea_err_added = 1; % 1: yes; 0: NO
 corr_flag     = 1; % corr = 1; no_corr = 0;
 pmprate = -1000;
 
