@@ -2,11 +2,11 @@ function EED_KPN = func_EED(obsid)
 % Version 5.0 07142016: Fix m. error covariance matrix in I2
 % Version 6.0 LAST UPDATED: 10/03/2019 (DEL SIGMA_i)
 % Version 6.1: Printer out Dnew to file
-
+addpath('/home/ftsai/codes/')
 %clc; clear all; 
 tic
 load head.mat
-load err1024.mat
+load('../err1024.mat')
 %for obsid = 1:1024
 
 
@@ -78,11 +78,11 @@ if runopt.KPN == 1
     [z w] = nwspgr('KPN', Nobs, acc.KPN);
     NKPpoints = length(z);
     for m = 1:9
-       ofile_dnew = strcat('Dnew_nobs_',num2str(Nobs),'_model_', num2str(m),'.csv' );				
+       #ofile_dnew = strcat('Dnew_nobs_',num2str(Nobs),'_model_', num2str(m),'.csv' );				
        for k = 1:NKPpoints % k is i in the MS.
             if corr_flag == 1 % with correlation
                 Dnew =   [Hopt(:,m)+LL(:,:,m)*z(k,:)'];  % NO CORRELATION 2x1 if 2 obs (samples of future data) 
-                dlmwrite(ofile_dnew,Dnew','-append','delimiter',',','precision','%.3f');           
+                #dlmwrite(ofile_dnew,Dnew','-append','delimiter',',','precision','%.3f');           
                 qi(k,1) = ftest(Nobs,Dnew,Hopt,COV9,Prior,corr_flag); % 10x1 Call function, using PDF pi  
                 clear Dnew
             else % No correlation

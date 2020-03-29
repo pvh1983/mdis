@@ -1,3 +1,5 @@
+#!/usr/bin/env octave
+
 % EXPERIMENTAL DESING USING ONE ADDITIONAL PUMPING WELL
 % Updated: March 2020
 % - Add pmprate to func_well.m

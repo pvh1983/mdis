@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from mpi4py import MPI
 import subprocess
 import os
@@ -55,9 +57,11 @@ if __name__ == '__main__':
     size = comm.Get_size()
     #print('My rank is ', rank)
     #print(f'size is {size}')
+    cwd = os.getenv('cur_dir')
+    # print(f'cdir={cwd}\n')
 
     # Load id of pump locations
-    data = np.loadtxt('parentpmp.txt')
+    data = np.loadtxt(cwd+'/parentpmp.txt')
 
     runid, ntasks_per_proc = DomainDecompose(comm, rank, size, data)
     # print(f'runid={runid}\n')
@@ -66,25 +70,34 @@ if __name__ == '__main__':
     if rank == 0:
         time_start = timeit.default_timer()
         # Preparing run folders
-        if not os.path.exists('run_1'):  # Make a new directory if not exist
-            os.system('./getfitness.sh')
-            print('Generated new run folders\n')
+        #init_run_dir = 'run_' + str(int(data[0, 0]))
+        # if not os.path.exists(init_run_dir):  # Make a new directory if not exist
+        #    os.system('./getfitness.sh')
+        #    print('Generated new run folders\n')
     comm.Barrier()
 
     for j in range(0, ntasks_per_proc):  # ntasks_per_proc: ntasks for each proc
         tic = timeit.default_timer()
-        cwd = os.getcwd()
-        # print(f'cdir={cwd}\n')
-        run_dir = 'run_' + str(int(runid[j, 0]))
+        #cwd = os.getcwd()
+
+        run_dir = cwd + '/run_' + str(int(runid[j, 0]))
         #print(f'current run directory is {run_dir}\n')
+        #cmd = 'export run_dir=' + run_dir + '/'
+        #subprocess.call(cmd, shell=True)
+        # print(f'cmd={cmd}\n')
+
         os.chdir(run_dir)
+        # print(f'cdir={cwd}\n')
+        # os.system('ln')
         #cmd = 'python test.py'
-        cmd = 'octave expdsg_run.m > dsp.out'
+        #cmd = 'octave expdsg_run.m > dsp.out'
+        cmd = 'expdsg_run.m > /dev/null'
+        #cmd = 'octave - qH - -no-window-system expdsg_run.m > /dev/null &'
         subprocess.call(cmd, shell=True)
         os.chdir(cwd)
         toc = timeit.default_timer()
         print(
-            f'{str(datetime.now())}, CPU {rank}, {run_dir}, {round((toc-tic)/60,3)} mins.\n')
+            f'{str(datetime.now())}, CPU {rank}, {run_dir}, {round((toc-tic)/60,2)} mins.\n')
     comm.Barrier()
 
     # Clean up: Delete all run folders

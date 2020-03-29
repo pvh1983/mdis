@@ -1,3 +1,5 @@
+#!/usr/bin/env octave
+
 clc; clear ; close all; tic
 
 %{
@@ -29,6 +31,7 @@ File history:
 
 % Output file: *.tom
 % pmp1.csv, pmp2.csv ... and *.tom
+
 %delete('*.tom'); % Clean the old *.tom file
 
 
@@ -203,7 +206,7 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
 
     %dlmwrite('all_min_BFac.tom',BFac','-append','delimiter','\t');
     ofile_csv = strcat('pmp', num2str(kk),'.csv')
-    dlmwrite(ofile_csv, PMP','precision','%.6f','delimiter',',');
+    dlmwrite(ofile_csv, [PMP', maxminEED_final, minK],'precision','%.6f','delimiter',',');
     %all_minBF(kk,:) = BFac;
     %all_PMP(kk,:) = PMP;
     fprintf(fid, "\n");    fprintf(fid, "\n");
