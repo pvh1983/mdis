@@ -68,7 +68,8 @@ def plot_pmp(df, dsg_sce, nobs):
 
 
 # main
-dsg_sce = ['h2S4_pmp2000_max_min', 'h2S4_pmp2000_max_max']
+dsg_sce = ['h1S4_pmp2000_max_min_final', 'h1S4_pmp2000_max_max_final']
+# dsg_sce = ['h2S4_pmp2000_max_min', 'h2S4_pmp2000_max_max']
 #dsg_sce = ['h3S4_pmp2000_max_min', 'h3S4_pmp2000_max_max']
 nobs = 4  # Max number of new obs wells
 

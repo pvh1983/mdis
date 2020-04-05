@@ -9,20 +9,20 @@ import numpy as np
 '''
 This code analyzes the results from multiple runs in an experimental design
 TO RUN: 
-    - Go to /work/ftxx/RUN_SCE/
+    - Go to /work/ftxx/PMPRUN_SCE/
     - Link (copy) this file to the current foder (if needed)
     - python analyze_mult_runs.py
-        - This runs analyze_single_run.m (in multiple run_xxx folder) 
+        [This runs analyze_single_run.m (in multiple run_xxx folder) 
           -> read out1.mat, out2.mat and so on
-          -> Get file pmp1.csv, pmp2.csv ...
+          -> Get file pmp1.csv, pmp2.csv ...]
   
 Updates: 
 - 03/23/2020: 
 
 '''
-opt_get_sing_pmp_csv_file = True
+opt_get_sing_pmp_csv_file = True  # run analyze_single_run.m
 
-nruns = 1218  # Number of run folders [202, 1218, ]
+nruns = 202  # Number of run folders [202, 1218, ]
 n_new_obs = 4  # new observation wells (from 1 to 5).
 nmodels = 9
 pmp = np.empty((nruns, nmodels+2))  # add two more columns
@@ -37,7 +37,8 @@ fid.write('run_id, nobs_loc, notes\n')
 
 if opt_get_sing_pmp_csv_file:
     for i in range(0, nruns, 1):  # Go to each folder
-        wpath = cur_dir + '/output/run_' + str(i+1)
+        # wpath = cur_dir + '/output/run_' + str(i+1) # Old, read output folder
+        wpath = cur_dir + '/run_' + str(i+1)
         #wpath = 'run_' + str(i+1)
 
         os.chdir(wpath)
@@ -69,7 +70,7 @@ count = 0
 id_err_run = []
 for k in range(n_new_obs):
     for i in range(0, nruns, 1):  # Go to each folder
-        wpath = cur_dir + '/output/run_' + str(i+1)
+        wpath = cur_dir + '/run_' + str(i+1)
         os.chdir(wpath)
         ifile_csv = 'pmp' + str(k+1) + '.csv'
         if os.path.isfile(ifile_csv):
@@ -100,5 +101,6 @@ for k in range(n_new_obs):
 fid.write('ID of FAILED run:\n')
 fid.write(f'{set(id_err_run)}\n')
 fid.close()
-print(f'ERRORS found. See file {ofile_log} for detail.\n')
+print(f'ERRORS (if found_ are at {ofile_log}.\n')
 # Next: postprocess.py to get figures
+# Next: Cleanup (del *.csv in run_? folers)

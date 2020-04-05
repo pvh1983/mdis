@@ -9,6 +9,7 @@
 % ATTENTION: All *.dat will be deleted!!!
   
 clc; clear all; close all; tic
+addpath('/home/ftsai/codes/')
 
 fid_log = fopen('runlog.txt','a');
 cdatetime = datestr(now, 'dd-mmm-yyyy HH:MM:SS');
@@ -126,7 +127,7 @@ while nobsloc <= max_nobsloc
 	chk2 = exist('Hobs1024points.mat'); % = 2 exist file.
 	if chk2 ~= 2
 		func_well(pmp(loc_opt_pmp,2:4), pmprate); % generate the new pmp package
-		load err1024 % Measurement errors
+		load('../err1024.mat') % Measurement errors
 		Hobs = NaN(512,1);
 		copyfile('mf54.wel','TrueGP2'); 
 		cd('TrueGP2'); % Change to each model's directory (GP1, GP2 ...)	
