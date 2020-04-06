@@ -20,7 +20,7 @@ export workdir=`pwd`
 #    count=$(( $count + 1 ))
 #done
 
-count=1601
+count=161
 pcount=0
 while read line
   do
@@ -80,9 +80,9 @@ while read line
 		ln -s $workdir/TrueGP2/* .
 		rm -f mf54._os mf54.wel *.out fort.*
 	  cd ..
-	ln -s $workdir/*.* .  
-#	  ln -s $workdir/gapmp
-	ln -s $workdir/gaobs
+	#ln -s $workdir/*.* .  
+    #ln -s $workdir/gapmp
+	#ln -s $workdir/gaobs
 	fi
 
 	cd $workdir/run_$count	  

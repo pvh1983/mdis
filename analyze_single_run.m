@@ -61,6 +61,7 @@ end
 
 % Load some files
 load head.mat
+load('../err1024.mat')
 
 ofile = 'output.tom'; % To write outputs and logs
 fid = fopen(ofile,'w');
@@ -68,7 +69,7 @@ fprintf(fid, "Curr dir: %s \n", pwd); fprintf(fid,"\n"); fprintf(fid,"\n");
 
 for kk = 1:n_new_obs % max =5 to avoid numerical errors
     fout=strcat('out',num2str(kk),'.mat');
-    fprintf(fid, "fout: %s \n", fout);
+    fprintf(fid, "fout: %s =================================================== \n", fout);
     fprintf("\nReading file: %s \n", fout);
     load(fout);
     
@@ -76,7 +77,7 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
     %fid ofile maxminEED_final runopt Dopt mea_err_added corr_flag Nmodels
     %clear all; load tmp.mat;    
     %clear Hobs
-    %load Hobs1024points.mat
+    load Hobs1024points.mat
 
 
 	% Find and print optimal observation locations ----------------------------
@@ -123,10 +124,10 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
     
     fprintf(fid, "Hopt are:\n");
     fprintf(fid, "GP1, GP2, GP3, IK1, IK2, IK3, IZ1, IZ2, IZ3\n");
-    #for i=1:size(Hopt)(1)
-    #    fprintf(fid, '%6.2f,', Hopt(i,:)'); 
-    #end
-    #writematrix(Hopt,fid,'-append')
+    %for i=1:size(Hopt)(1)
+    %    fprintf(fid, '%6.2f,', Hopt(i,:)'); 
+    %end
+    %writematrix(Hopt,fid,'-append')
     dlmwrite(fid,Hopt,'-append', 'precision','%4.3f')
     fprintf(fid,"\n");
 
@@ -139,11 +140,16 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
     clear Htmp 
     WMCV = sum(SIGi9,3);
     
+    fprintf(fid, "HBMA are:\n");
+    HBMA = Hopt*Prior;
+    dlmwrite(fid,HBMA,'-append', 'precision','%4.3f')
+    fprintf(fid,"\n");
+
     %fprintf('Hdiff:\n');
     for m = 1:Nmodels
         %Hdiff = Hopt(:,m) - Hobs(obsid,1)-err1024(obsid,1);
         Hdiff = Hopt(:,m) - D;
-        #fprintf('%6.2f\n', Hdiff');
+        %fprintf('%6.2f\n', Hdiff');
         SH(:,:,m) = (Hdiff*Hdiff')*Prior(m,1); % FULL COV. MATRIX
         %SH(:,:,m) = diag(Hdiff*Hdiff');
     end
@@ -153,24 +159,41 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
     SIG_err = eye(Nobs,Nobs);
     SIG_err(logical(eye(size(SIG_err)))) = err1024(obsid).^2; % Dig terms only
 
-    for m = 1:Nmodels
-        COV9(:,:,m) = SIG + SIG_err;
-    end
+    %for m = 1:Nmodels
+    COV9(:,:) = SIG + SIG_err;
+    %end
 
-    fprintf(fid, "SIGi9 is: \n");
-    fprintf(fid, '%6.3e, ', SIGi9); fprintf(fid,"\n");
-    fprintf(fid, "SIG_err is: \n");
-    fprintf(fid, '%6.3e, ', SIG_err); fprintf(fid,"\n");
-    fprintf(fid, "BMCV is: \n");
-    fprintf(fid, '%6.3e, ', BMCV); fprintf(fid,"\n");
-    fprintf(fid, "WMCV is: \n");
-    fprintf(fid, '%6.3e, ', WMCV); fprintf(fid,"\n");
+    fprintf(fid, "SIGi9 (m^2): \n");
+    %fprintf(fid, '%6.3e, ', SIGi9); fprintf(fid,"\n");
+    for i=1:9
+        dlmwrite(fid,SIGi9(:,:,m),'-append', 'precision','%4.3e')
+        fprintf(fid,"\n");
+    end
+    fprintf(fid, "SIG_err (m^2): \n");
+    %fprintf(fid, '%6.3e, ', SIG_err); fprintf(fid,"\n");
+    dlmwrite(fid,SIG_err,'-append', 'precision','%4.3f')
+    fprintf(fid,"\n");
+    
+    fprintf(fid, "BMCV (m^2): \n");
+    %fprintf(fid, '%6.3e, ', BMCV); fprintf(fid,"\n");
+    dlmwrite(fid,BMCV,'-append', 'precision','%4.3f')
+    fprintf(fid,"\n");
+    
+    fprintf(fid, "WMCV (m^2): \n");
+    %fprintf(fid, '%6.3e, ', WMCV); fprintf(fid,"\n");
+    dlmwrite(fid,WMCV,'-append', 'precision','%4.3f')
+    fprintf(fid,"\n");
+
+    fprintf(fid, "COV9 (m^2): \n");
+    %fprintf(fid, '%6.3e, ', WMCV); fprintf(fid,"\n");
+    dlmwrite(fid,COV9,'-append', 'precision','%4.3f')
+    fprintf(fid,"\n");
 
     %clear Dtmp
     %% CALCULATE LIKELIHOOD:
     for m = 1:Nmodels % models       	
         %L(m,1) = det(SIG_err+SIGi9(:,:,m))^(-1/2)*exp(-0.5*(D-Hopt(:,m))'*(SIG_err+SIGi9(:,:,m))^(-1)*(D-Hopt(:,m))); %            	
-        L(m,1) = det(COV9(:,:,m))^(-1/2)*exp(-0.5*(D-Hopt(:,m))'*(COV9(:,:,m))^(-1)*(D-Hopt(:,m))); %            	
+        L(m,1) = det(COV9(:,:))^(-1/2)*exp(-0.5*(D-Hopt(:,m))'*(COV9(:,:))^(-1)*(D-Hopt(:,m))); %            	
     end
 
     %% CALCULATED POSTERIOR MODEL PROBABILITY

@@ -20,14 +20,22 @@ Updates:
 - 03/23/2020: 
 
 '''
-opt_get_sing_pmp_csv_file = True  # run analyze_single_run.m
 
-nruns = 202  # Number of run folders [202, 1218, ]
+#
+opt_get_sing_pmp_csv_file = True  # run analyze_single_run.m
+n_new_pmp_wells = int(os.getenv('n_new_pmp_wells'))  # Values of 1, 2, or 3
 n_new_obs = 4  # new observation wells (from 1 to 5).
 nmodels = 9
-pmp = np.empty((nruns, nmodels+2))  # add two more columns
 cur_dir = os.getcwd()
 #dsg_sce = 'h1S4_pmp2000_max_max'
+# main program
+if n_new_pmp_wells == 1:
+    nruns = 202  # Number of run folders
+elif n_new_pmp_wells == 2:
+    nruns = 1218  # Number of run folders
+elif n_new_pmp_wells == 3:
+    nruns = 3654  # Number of run folders
+pmp = np.empty((nruns, nmodels+2))  # add two more columns
 
 # Opend a txt file to print out log/results
 ofile_log = 'res_logs.txt'
