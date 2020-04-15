@@ -36,11 +36,17 @@ File history:
 
 
 % Define other run options
-n_new_obs = 4; % from 1 to 5. 
+%n_new_obs = 4; % from 1 to 5. 
+n_new_obs = int8(str2num(getenv('max_nobs_loc')));
 % MAKE SURE YOU CHANGE THESE PARAMETERS:
-runopt = 4; % Consider m. err or not: [1] with m. err; [0] no m.err
-Dopt   = 1; % Choosing future observation data: [1] real obs; [0] BMA
-mea_err_added = 0; % 1: yes; 0: NO
+%runopt = 4; % Consider m. err or not: [1] with m. err; [0] no m.err
+
+Dopt = int8(str2num(getenv('opt_future_obs'))); %[0] real obs; [1] BMA
+%Dopt   = 1; % Choosing future observation data: [0] real obs; [1] BMA
+
+Err_opt = int8(str2num(getenv('opt_mea_err'))); %[0] No mea err; [1] WITH err
+%Err_opt = 1; % 1: yes; 0: NO
+
 corr_flag     = 1; % corr = 1; no_corr = 0; - Not using this option here?
 Nmodels = 9;
 opt_run_true_model = 0; % 1:run; other: no_run
@@ -63,7 +69,7 @@ end
 load head.mat
 load('../err1024.mat')
 
-ofile = 'output.tom'; % To write outputs and logs
+ofile = strcat('output_', 'Dopt',num2str(Dopt),'Eopt',num2str(Err_opt), '.tom'); % To write outputs and logs
 fid = fopen(ofile,'w');
 fprintf(fid, "Curr dir: %s \n", pwd); fprintf(fid,"\n"); fprintf(fid,"\n");
 
@@ -74,7 +80,7 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
     load(fout);
     
     %save tmp.mat kk loc_opt_obs loc_opt_pmp err1024 Prior H Hopt_ 
-    %fid ofile maxminEED_final runopt Dopt mea_err_added corr_flag Nmodels
+    %fid ofile maxminEED_final runopt Dopt Err_opt corr_flag Nmodels
     %clear all; load tmp.mat;    
     %clear Hobs
     load Hobs1024points.mat
@@ -101,20 +107,8 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
     %%
     Dtmp(1:Nobs,1:9) = H(obsid,1,:); % Hopt
     
-    % Choosing of future observation data (D) and errors
-    if mea_err_added == 1
-        D = Hobs(obsid,1)+err1024(obsid,1);     % Use real observation data + err
-        fprintf(fid, "\nWARNING: Measurement errors were ADDED to future obs.");
-    else
-        D = Hobs(obsid,1);     % Use real observation data
-        fprintf(fid, "\nWARNING: NO measurement errors were added to future obs.");
-    end
 
-    if Dopt == 1
-        fprintf(fid, "\nWARNING: Used REAL observation data (Hobs from GB2) for future obs.\n");        
-    else
-        fprintf(fid, "\nWARNING: Used BMA data for future obs.\n");
-    end 
+
 
     % Get Hopt at a design location
     Hopt(1:length(obsid),1:Nmodels) = H(obsid,1,:);
@@ -145,6 +139,23 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
     dlmwrite(fid,HBMA,'-append', 'precision','%4.3f')
     fprintf(fid,"\n");
 
+
+    % Choosing of future observation data (D) and errors
+   
+    if Dopt == 1 && Err_opt == 1
+        D = HBMA + err1024(obsid,1);
+        fprintf(fid, "\nWARNING: [1] Used HBMA + err for future observation \n");        
+    elseif Dopt == 1 && Err_opt == 0
+        D = HBMA
+        fprintf(fid, "\nWARNING: [2] Used HBMA (NO err) for future observation\n");        
+    elseif Dopt == 0 && Err_opt == 1
+        D = Hobs(obsid,1)+err1024(obsid,1);
+        fprintf(fid, "\nWARNING: [3] Used Hobs + err for future observation \n");        
+    elseif Dopt == 0 && Err_opt == 0
+        D = Hobs(obsid,1);     % Use real observation data
+        fprintf(fid, "\nWARNING: [4] Used Hobs (NO err) for future observation\n");        
+    end 
+
     %fprintf('Hdiff:\n');
     for m = 1:Nmodels
         %Hdiff = Hopt(:,m) - Hobs(obsid,1)-err1024(obsid,1);
@@ -171,7 +182,7 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
     end
     fprintf(fid, "SIG_err (m^2): \n");
     %fprintf(fid, '%6.3e, ', SIG_err); fprintf(fid,"\n");
-    dlmwrite(fid,SIG_err,'-append', 'precision','%4.3f')
+    dlmwrite(fid,SIG_err,'-append', 'precision','%4.3e')
     fprintf(fid,"\n");
     
     fprintf(fid, "BMCV (m^2): \n");
@@ -181,7 +192,7 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
     
     fprintf(fid, "WMCV (m^2): \n");
     %fprintf(fid, '%6.3e, ', WMCV); fprintf(fid,"\n");
-    dlmwrite(fid,WMCV,'-append', 'precision','%4.3f')
+    dlmwrite(fid,WMCV,'-append', 'precision','%4.3e')
     fprintf(fid,"\n");
 
     fprintf(fid, "COV9 (m^2): \n");

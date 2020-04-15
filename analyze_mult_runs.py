@@ -10,6 +10,7 @@ import numpy as np
 This code analyzes the results from multiple runs in an experimental design
 TO RUN: 
     - Go to /work/ftxx/PMPRUN_SCE/
+    - copy sing.linux
     - Link (copy) this file to the current foder (if needed)
     - python analyze_mult_runs.py
         [This runs analyze_single_run.m (in multiple run_xxx folder) 
@@ -23,19 +24,25 @@ Updates:
 
 #
 opt_get_sing_pmp_csv_file = True  # run analyze_single_run.m
+
+# Get variable values from system env
 n_new_pmp_wells = int(os.getenv('n_new_pmp_wells'))  # Values of 1, 2, or 3
-n_new_obs = 4  # new observation wells (from 1 to 5).
+nobs = int(os.getenv('max_nobs_loc'))  # newobs wells (from 1-5).
+Dopt = int(os.getenv('opt_future_obs'))
+mea_err = int(os.getenv('opt_mea_err'))
+
 nmodels = 9
 cur_dir = os.getcwd()
 #dsg_sce = 'h1S4_pmp2000_max_max'
 # main program
-if n_new_pmp_wells == 1:
+if n_new_pmp_wells == 0:
+    nruns = 1  # Number of run folders
+elif n_new_pmp_wells == 1:
     nruns = 202  # Number of run folders
 elif n_new_pmp_wells == 2:
-    nruns = 1218  # Number of run folders
+    nruns = 1378  # Number of run folders
 elif n_new_pmp_wells == 3:
     nruns = 3654  # Number of run folders
-pmp = np.empty((nruns, nmodels+2))  # add two more columns
 
 # Opend a txt file to print out log/results
 ofile_log = 'res_logs.txt'
@@ -64,7 +71,7 @@ if opt_get_sing_pmp_csv_file:
         #os.system('cp -f ../TrueGP2/mf54.lpf TrueGP2/')
 
         # Run Matlab code to analyze the result for one design
-        os.system('octave analyze_single_run.m --silent > tmp.log')
+        os.system('octave analyze_single_run.m --silent > /dev/null')
 
         # Load ouput files and save the result
         # The csv file is created from analyze_single_run.m
@@ -76,7 +83,8 @@ if opt_get_sing_pmp_csv_file:
 os.chdir(cur_dir)
 count = 0
 id_err_run = []
-for k in range(n_new_obs):
+for k in range(nobs):
+    pmp = np.empty((nruns, nmodels+2))  # add two more columns
     for i in range(0, nruns, 1):  # Go to each folder
         wpath = cur_dir + '/run_' + str(i+1)
         os.chdir(wpath)
@@ -84,12 +92,12 @@ for k in range(n_new_obs):
         if os.path.isfile(ifile_csv):
             print(f'\nReading {wpath}/{ifile_csv}\n')
             data = np.loadtxt(ifile_csv, delimiter=',')
-            pmp[i, :] = data
+            pmp[i, :] = data.copy()
         else:
             print(f'ERROR: No {ifile_csv} for this run {wpath}\n')
             fid.write(f'ERROR: run_{i+1}, {k}, "no" {ifile_csv}\n')
-            data = np.empty((1, nmodels+2))
-            pmp[i, :] = data
+            #data = np.empty((1, nmodels+2))
+            pmp[i, :] = np.empty((1, nmodels+2))
             count += 1
             id_err_run.append(i+1)
 
@@ -103,12 +111,14 @@ for k in range(n_new_obs):
     # print(id_err_run)
 
     # Save to the output file
-    ofile = cur_dir + '/all_pmp' + str(k+1) + '.csv'
+    ofile = cur_dir + '/res_Dopt' + \
+        str(Dopt) + 'Eopt' + str(mea_err) + 'Nobs' + str(k+1) + '.csv'
     np.savetxt(ofile, pmp, fmt='%.4f', delimiter=',')
     print(f'Saved the output file at {ofile}\n')
 fid.write('ID of FAILED run:\n')
 fid.write(f'{set(id_err_run)}\n')
+fid.write(f'Total number of FAILED runs: {len(set(id_err_run))}\n')
 fid.close()
-print(f'ERRORS (if found_ are at {ofile_log}.\n')
+print(f'ERRORS (if found) are at {ofile_log}.\n')
 # Next: postprocess.py to get figures
 # Next: Cleanup (del *.csv in run_? folers)

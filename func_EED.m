@@ -78,11 +78,11 @@ if runopt.KPN == 1
     [z w] = nwspgr('KPN', Nobs, acc.KPN);
     NKPpoints = length(z);
     for m = 1:9
-       #ofile_dnew = strcat('Dnew_nobs_',num2str(Nobs),'_model_', num2str(m),'.csv' );				
+       %ofile_dnew = strcat('Dnew_nobs_',num2str(Nobs),'_model_', num2str(m),'.csv' );				
        for k = 1:NKPpoints % k is i in the MS.
             if corr_flag == 1 % with correlation
                 Dnew =   [Hopt(:,m)+LL(:,:,m)*z(k,:)'];  % NO CORRELATION 2x1 if 2 obs (samples of future data) 
-                #dlmwrite(ofile_dnew,Dnew','-append','delimiter',',','precision','%.3f');           
+                %dlmwrite(ofile_dnew,Dnew','-append','delimiter',',','precision','%.3f');           
                 qi(k,1) = ftest(Nobs,Dnew,Hopt,COV9,Prior,corr_flag); % 10x1 Call function, using PDF pi  
                 clear Dnew
             else % No correlation
@@ -102,11 +102,12 @@ if runopt.KPN == 1
         %qi_all(:,m) = qi;clear qi
         
     end
-    EED_KPN = (I1-Nobs/2-I2)'*Prior; % I2 is E[log(q)]
+    EED_KPN = (I1-Nobs/2-I2)'*Prior % I2 is E[log(q)]
 
     func_run_time = toc;
-    out = [obsid EED_KPN func_run_time];
-    dlmwrite('EED_KPN.txt',out,'-append')
+    %out = [obsid EED_KPN func_run_time];
+    %out = [obsid EED_KPN];
+    %dlmwrite('EED_KPN.txt',out,'-append')
      if EED_KPN < 0
          EED_KPN = -999;
      else

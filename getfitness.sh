@@ -20,7 +20,7 @@ export workdir=`pwd`
 #    count=$(( $count + 1 ))
 #done
 
-count=161
+count=1
 pcount=0
 while read line
   do

@@ -4,7 +4,7 @@ addpath('/home/ftsai/codes/')
 % Ver 2.1 04052020 Make sure new obs are unique
 %load head.mat 
 
-source_dir = getenv('cur_dir')
+source_dir = getenv('cur_dir');
 %fprintf(fid_log, "source_dir=%s\n", source_dir);
 
 obs = load(strcat(source_dir,'/pmploc1024.txt')); 
@@ -13,7 +13,7 @@ pmp = load(strcat(source_dir, '/pmploc256.txt'));
 loc_opt_pmp = load('param.txt'); % cols: id, idpmp1, idpmp2, ..., idpmp_x
 loc_opt_pmp(1) = []; % Delete the first row which is for ID
 
-obsloc = (load('parentobs.dat')) % No. of potential obs locs
+obsloc = (load('parentobs.dat')); % No. of potential obs locs
 
 % check if a new obs well is at a pumping well location
 flag = 0;
@@ -32,7 +32,7 @@ end
 opt_maxmin = str2num(getenv('opt_max_or_min'));
 
 Nobs = length(obsloc(1,:));
-obsloc_unique = unique(obsloc)
+obsloc_unique = unique(obsloc);
 % Check and skip if found a same obs id
 
 if opt_maxmin==1 % maxmin
@@ -56,7 +56,7 @@ elseif opt_maxmin==-1 % maxmax
 		if fitness ==-Inf || isnan(fitness)==1
 			fitness = -9999; % assign a much smaller
 		else
-			fitness = -fitness % example 0.78, 0.92, 1.12
+			fitness = -fitness; % example 0.78, 0.92, 1.12
 		end
 	else % new loc is at pmploc or dupplicated
 		fitness = -9999; % assign a much smaller
@@ -74,4 +74,4 @@ dlmwrite('fitness.dat',fitness,'delimiter','\t');
 
 rr = NaN(1,Nobs+1);
 rr = [reshape(obsloc,Nobs,1)' fitness];
-dlmwrite('results.dat',rr,'precision', '%.4f','-append','delimiter','\t');
+dlmwrite('results.dat',rr,'-append'); %'precision', '%5.4f', 'delimiter','\t'

@@ -41,7 +41,8 @@ fprintf(fid_log, "max_nobsloc= %d\n", max_nobsloc);
 
 %mea_err_added = 1; % 1: yes; 0: NO
 %corr_flag     = 1; % corr = 1; no_corr = 0;
-pmprate = -1000;
+pmprate = int8(str2num(getenv('pmprate')));
+%pmprate = -1000;
 
 %% Par in func_EED.m ? %%%
 %% Comment pmpdsg if head.mat already available in each run %%%
