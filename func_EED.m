@@ -47,7 +47,7 @@ BMCV = sum(SH,3); clear SH
 
 SIG = BMCV + WMCV; % Total model covariance by BMA Nobs x Nobs
 clear BMCV WMCV
-
+ 
 SIG_err = eye(Nobs,Nobs);
 SIG_err(logical(eye(size(SIG_err)))) = err1024(obsid).^2; % Dig terms only
 
