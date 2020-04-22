@@ -1,0 +1,52 @@
+#!/bin/sh
+#PBS -A hpc_waterres11
+#PBS -q checkpt
+####PBS -M ftsai@lsu.edu
+####PBS -m abe
+#PBS -l nodes=17:ppn=16
+#PBS -l walltime=4:59:00
+####PBS -V
+#PBS -N h2mama
+#module load octave/3.8.2/INTEL-14.0.2
+
+date
+
+source ~/.bashrc
+source activate p3
+
+cd $PBS_O_WORKDIR
+
+# Notes: 
+# --- Change nobsloc=?
+
+#export run_sce="h1S4_pmp2000_max_min"
+#octave expdsg_run.m > dsp.out
+#./getfitness.sh
+#python copyfile_.py
+
+echo $PATH
+
+echo $(pwd)
+
+export PATH=/home/ftsai/codes/:$PATH
+
+echo $PATH
+
+echo $PBS_NODEFILE
+
+export cur_dir=$(pwd)
+export nobs_loc=1 # choose one value from 1-5
+export max_nobs_loc=5 # choose one value from 1-4 (=1 run only 1newobs, =4 upto 4)
+export opt_max_or_min=-1 # [-1] max; [1] min 
+export n_new_pmp_wells=2 # Choosing 1, 2 or 3
+export pmprate=-1000
+
+echo $cur_dir
+
+export NPROCS=`wc -l $PBS_NODEFILE |gawk '//{print $1}'`
+
+mpirun -machinefile $PBS_NODEFILE -n  $NPROCS exp_using_mpirun.py
+
+sleep 2
+
+date

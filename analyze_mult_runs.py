@@ -88,7 +88,7 @@ for k in range(nobs):
     for i in range(0, nruns, 1):  # Go to each folder
         wpath = cur_dir + '/run_' + str(i+1)
         os.chdir(wpath)
-        ifile_csv = 'pmp' + str(k+1) + '.csv'
+        ifile_csv = 'pmp' + str(k+1) + 'Dopt' + str(Dopt) + '.csv'
         if os.path.isfile(ifile_csv):
             print(f'\nReading {wpath}/{ifile_csv}\n')
             data = np.loadtxt(ifile_csv, delimiter=',')

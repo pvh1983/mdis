@@ -116,7 +116,7 @@ while nobsloc <= max_nobsloc
 	end
     delete('gaobs.inp');
 	%dlmwrite(outfile1,'DONE running gaobs.','-append','delimiter','');
-
+ 
 	
 	%system(cmd_cpfile{:,:})
 	
@@ -139,7 +139,7 @@ while nobsloc <= max_nobsloc
 		%save('Hobs1024points.mat','Hobs');  % in ASCII format
 		save -mat-binary Hobs1024points.mat Hobs
 	end
-
+ 
 	%dlmwrite(outfile1,'The pumping locations:','-append','delimiter','');
 	%dlmwrite(outfile1,[loc_opt_pmp],'-append','delimiter','\t');
 	%dlmwrite(outfile1,'Saved Hobs at Hobs1024points.mat.','-append','delimiter','');
@@ -151,9 +151,9 @@ while nobsloc <= max_nobsloc
 	end
 	
 	rtime(nobsloc,1) = toc/3600;
-	clear chk chk2	
-	save -mat-binary data.mat
-	movefile('data.mat',outfile3);	
+	clear chk chk2 	
+	%save -mat-binary data.mat
+	%movefile('data.mat',outfile3);	
 	%dlmwrite(outfile1,'Total run time for expdsg_run.m is:','-append','delimiter','');
 	%dlmwrite(outfile1,[rtime],'-append','delimiter','\t');
 	fprintf(fid_log, "Nobs = %d, run time = %4.3f (hours)\n", nobsloc, toc/3600);

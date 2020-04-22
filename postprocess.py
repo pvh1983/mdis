@@ -47,7 +47,7 @@ fid.write(
 fid.write(f'Dopt, {Dopt}\n')
 fid.write(f'mea_err, {mea_err}\n')
 # Define some functions
-
+ 
 
 def read_data(wdir, dsg_sce, col_names, nobs, Dopt, mea_err):
     ifile = wdir + dsg_sce + '/res_Dopt' + \
@@ -67,7 +67,7 @@ def plot_pmp(df, dsg_sce, nobs):
 
     # Count the times a model becomes the best model
     list_of_best_model = id_max_pmp.value_counts()
-    fid.write('\nList of the best models and frequency:\n')
+    fid.write('\nList of the best models and frequency for nobs={nobs}:\n')
     fid.write(f'{list_of_best_model}\n')
 
     # Save hist figures of posterior model probability
@@ -84,19 +84,25 @@ def plot_pmp(df, dsg_sce, nobs):
 
 
 # main program
-if n_new_pmp_wells == 1:
+if n_new_pmp_wells == 0:
+    nruns = 1  # Number of run folders
+    dsg_sce = ['h0S4_wi_corr_max_min_NEW2019']
+elif n_new_pmp_wells == 1:
     #dsg_sce = ['h1S4_pmp2000_max_min_final', 'h1S4_pmp2000_max_max_final']
-    dsg_sce = ['h1S4_pmp2000_max_max_final']
+    #dsg_sce = ['h1S4_pmp2000_max_max_final']
+    dsg_sce = ['d1pmp1000_mama_ver042020']
 elif n_new_pmp_wells == 2:
     #dsg_sce = ['h2S4_pmp2000_max_min_final', 'h2S4_pmp2000_max_max_final']
     dsg_sce = ['h2S4_pmp2000_max_max_final']
 elif n_new_pmp_wells == 3:
     #dsg_sce = ['h3S4_pmp2000_max_min', 'h3S4_pmp2000_max_max']
-    dsg_sce = ['h3S4_pmp2000_max_max']
+    #dsg_sce = ['h3S4_pmp2000_max_max']
+    dsg_sce = ['d3pmp1000_mama_ver042020']
+    
 
 # [Cal 1] Final max-min IG ------------------------------------------------
 for s in dsg_sce:
-    fid.write(f'Run scenario, {s} ------------------------------\n')
+    fid.write(f'Run scenario, {s} --------------------------------\n')
     fid.write('Nobs,IG_min,IG_max,IG_std,MinBF_min,MinBF_max,MinBF_std\n')
     for i in range(nobs):
         df = read_data(wdir, s, col_names, i+1, Dopt, mea_err)
@@ -127,6 +133,12 @@ for i in range(nobs):
         y = df['IG']
         ax2.plot(abs(y), label=s, alpha=0.8)
         ax2.set_ylabel('IG (nat)')
+
+        # Plot Bayes Factore in the secondary axis
+        ax22 = ax2.twinx()
+        y2 = df['MinBF']
+        ax22.plot(abs(y2), color='r', alpha=0.8)
+        ax22.set_ylabel('Bayes Factor')
     ax2.set_title('nobs='+str(i+1))
     ax2.legend()  # Add a legend.
     ofile = odir + '/' + 'IG_'+'nobs_' + str(i+1) + 'Dopt' + str(Dopt) + '.png'

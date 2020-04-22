@@ -51,6 +51,7 @@ corr_flag     = 1; % corr = 1; no_corr = 0; - Not using this option here?
 Nmodels = 9;
 opt_run_true_model = 0; % 1:run; other: no_run
 %run_folder_id = 3
+Prior = [1.77E-01	1.90E-01	1.88E-01	1.71E-01	2.05E-01	6.94E-02	1.71E-13	4.26E-12	6.21E-10]';
 
 % Jump to run_xxx folder
 %cur_run_folder = strcat(pwd, '/run_', num2str(run_folder_id))
@@ -67,23 +68,25 @@ end
 
 % Load some files
 load head.mat
+load Hobs1024points.mat
 load('../err1024.mat')
+
 
 ofile = strcat('output_', 'Dopt',num2str(Dopt),'Eopt',num2str(Err_opt), '.tom'); % To write outputs and logs
 fid = fopen(ofile,'w');
 fprintf(fid, "Curr dir: %s \n", pwd); fprintf(fid,"\n"); fprintf(fid,"\n");
 
 for kk = 1:n_new_obs % max =5 to avoid numerical errors
-    fout=strcat('out',num2str(kk),'.mat');
-    fprintf(fid, "fout: %s =================================================== \n", fout);
-    fprintf("\nReading file: %s \n", fout);
-    load(fout);
+    %fout=strcat('out',num2str(kk),'.mat');
+    %fprintf(fid, "fout: %s =================================================== \n", fout);
+    %fprintf("\nReading file: %s \n", fout);
+    %load(fout);
     
     %save tmp.mat kk loc_opt_obs loc_opt_pmp err1024 Prior H Hopt_ 
     %fid ofile maxminEED_final runopt Dopt Err_opt corr_flag Nmodels
     %clear all; load tmp.mat;    
     %clear Hobs
-    load Hobs1024points.mat
+    
 
 
 	% Find and print optimal observation locations ----------------------------
@@ -99,16 +102,14 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
     maxminEED_final = -minfit;
 	obsid_tmp = find(r(:,Nobs+1) == minfit);
 	obsid = r(obsid_tmp(end),1:Nobs); clear obsid_tmp
-    
-    fprintf(fid, "Observation locations: \n");
-    fprintf(fid, '%d, ', obsid); fprintf(fid,"\n");
+    fprintf(fid, "\n\n================================================================================\n");
+    fprintf(fid, "Observation locations: ");
+    fprintf(fid, '%d ', obsid); fprintf(fid,"\n");
+    fprintf(fid, "================================================================================\n\n");
     fprintf(fid, "EED (maxmin or maxmax): %6.3f (nat)\n", maxminEED_final);   
 
     %%
-    Dtmp(1:Nobs,1:9) = H(obsid,1,:); % Hopt
-    
-
-
+    %Dtmp(1:Nobs,1:9) = H(obsid,1,:); % Hopt
 
     % Get Hopt at a design location
     Hopt(1:length(obsid),1:Nmodels) = H(obsid,1,:);
@@ -141,7 +142,6 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
 
 
     % Choosing of future observation data (D) and errors
-   
     if Dopt == 1 && Err_opt == 1
         D = HBMA + err1024(obsid,1);
         fprintf(fid, "\nWARNING: [1] Used HBMA + err for future observation \n");        
@@ -158,8 +158,7 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
 
     %fprintf('Hdiff:\n');
     for m = 1:Nmodels
-        %Hdiff = Hopt(:,m) - Hobs(obsid,1)-err1024(obsid,1);
-        Hdiff = Hopt(:,m) - D;
+        Hdiff = Hopt(:,m) - HBMA;
         %fprintf('%6.2f\n', Hdiff');
         SH(:,:,m) = (Hdiff*Hdiff')*Prior(m,1); % FULL COV. MATRIX
         %SH(:,:,m) = diag(Hdiff*Hdiff');
@@ -204,6 +203,7 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
     %% CALCULATE LIKELIHOOD:
     for m = 1:Nmodels % models       	
         %L(m,1) = det(SIG_err+SIGi9(:,:,m))^(-1/2)*exp(-0.5*(D-Hopt(:,m))'*(SIG_err+SIGi9(:,:,m))^(-1)*(D-Hopt(:,m))); %            	
+        % NEW: D from samples - NOT BMA. - How to get D?
         L(m,1) = det(COV9(:,:))^(-1/2)*exp(-0.5*(D-Hopt(:,m))'*(COV9(:,:))^(-1)*(D-Hopt(:,m))); %            	
     end
 
@@ -239,7 +239,7 @@ for kk = 1:n_new_obs % max =5 to avoid numerical errors
     fprintf(fid, "Min BFac = %4.3f \n", minK)
 
     %dlmwrite('all_min_BFac.tom',BFac','-append','delimiter','\t');
-    ofile_csv = strcat('pmp', num2str(kk),'.csv')
+    ofile_csv = strcat('pmp', num2str(kk),'Dopt',num2str(Dopt),'.csv')
     dlmwrite(ofile_csv, [PMP', maxminEED_final, minK],'precision','%.6f','delimiter',',');
     %all_minBF(kk,:) = BFac;
     %all_PMP(kk,:) = PMP;
